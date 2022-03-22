@@ -74,7 +74,7 @@ def calendar(request):
     LoggedUser = User.objects.get(id=UserID)
     assignment_list = []
     v = request.session.get('courses')
-    print(f'courses cookie: calendar view\t: {v}')
+    print(f'courses cookie: calendar view\t: {v}')      # Unit Testing
     UserResult = []
     if LoggedUser.is_instructor: # is instructor
         UserResult = item.filter(instructor_id=UserID) # get instructor courses
@@ -85,6 +85,7 @@ def calendar(request):
 
         for course_id in course_list:
             UserResult.append(Course.objects.get(id=course_id))
+            print(f'courses cookie: calendar view\t: {UserResult}')  # Unit Testing
 
         # get all the assignment for the user (student)
         asn_list = Assignment.objects.all()

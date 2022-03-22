@@ -10,15 +10,13 @@
             crossorigin="anonymous"></script>
     <style>
         body {
-            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2gOp_o0HxgwsnD2iyj3XXC2eFq5Q8KyYD6A&usqp=CAU');
+            {#background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2gOp_o0HxgwsnD2iyj3XXC2eFq5Q8KyYD6A&usqp=CAU');#}
+            background-color: white;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-size: 100% 100%;
         }
 
-        a:hover {
-            background-color: lightgrey;
-        }
 
         h1 {
             text-align: center;
@@ -37,11 +35,15 @@
             font-size: 25px;
             margin: 10px;
             display: inline-block;
-            color: white;
-            background-color: lightblue;
+            color: black;
             {#background-opacity: 0.8;#}
-            text-shadow: 1px 1px 2px lightgray, 0 0 25px blue, 0 0 5px aqua;
+            {#text-shadow: 1px 1px 2px lightgray, 0 0 25px blue, 0 0 5px aqua;#}
+            {#background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);#}
         }
+        .nav-link {
+            border-radius: 30px;
+            background-color: lightgrey;
+            }
 
         .float-container
         {
@@ -64,11 +66,12 @@
             flex-wrap: wrap;
             position: relative;
             width: 450px;
-            height: 300px;
+            height: 250px;
         }
         .card
         {
             display: flex;
+            border: 1px solid black;
         }
         .float-child2
         {
@@ -114,7 +117,7 @@
         .todo_click:visited {color: black;}
         .todo_click:hover
         {
-            border: 4px dotted blue;
+            border:  5px dotted white;
         }
         .todo-group
         {
@@ -229,7 +232,7 @@
         }
         .messages:hover
         {
-            background-color: gray;
+            background-color: lightgray;
             border-radius: 35px 15px 15px 35px;
             -webkit-transition: all 0.4s ease-in-out;
             transition: all 0.4s ease-in-out;
@@ -238,33 +241,59 @@
         {
             visibility: hidden;
         }
+        #link:hover {
+            color: white;
+            background-color: grey;
+        }
+
+        .gradient-custom-2 {
+  /* fallback for old browsers */
+  background: #fccb90;
+
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
+
+  /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
+}
+
+@media (min-width: 768px) {
+  .gradient-form {
+    height: 100vh !important;
+  }
+}
+@media (min-width: 769px) {
+  .gradient-custom-2 {
+    border-top-right-radius: .3rem;
+    border-bottom-right-radius: .3rem;
+  }
+}
 
     </style>
 </head>
 <body>
-    <nav class="navbar" style="background-color: gray; padding-left: 10px; padding-right: 10px;">
+    <nav class="navbar" style="background-color: whitesmoke; padding-left: 10px; padding-right: 10px; margin-bottom: 50px;">
         <a href="#" class="navbar-brand" style="color: white"></a>
         <div class="navbar">
-            <a href="{% url 'mysite:main' %}" class="nav-item nav-link">Dashboard</a>
-            <a href="{% url 'profile' %}" class="nav-item nav-link">Profile</a>
+            <a id="link" href="{% url 'mysite:main' %}" class="nav-item nav-link" name="Dashboard_Button">Dashboard</a>
+            <a id="link" href="{% url 'profile' %}" class="nav-item nav-link" name="_Button">Profile</a>
         {% if user.is_instructor == True %}
-            <a href="{% url 'course:courses' %}" class="nav-item nav-link">Courses</a>
-            <a href="{% url 'users:calendar' %}" class="nav-item nav-link">Calendar</a>
+            <a  id="link" href="{% url 'course:courses' %}" class="nav-item nav-link" name="Courses_Button">Courses</a>
+            <a  id="link" href="{% url 'users:calendar' %}" class="nav-item nav-link" name="Calendar_Button">Calendar</a>
         {% endif %}
         {% if user.is_instructor == False %}
-            <a href="{% url 'mysite:registerClasses' %}" class="nav-item nav-link">Register</a>
-            <a href="{% url 'payment:account' %}" class="nav-item nav-link">Account</a>
-            <a href="{% url 'users:calendar' %}" class="nav-item nav-link">Calendar</a>
+            <a id="link" href="{% url 'mysite:registerClasses' %}" class="nav-item nav-link" name="Register_Button">Register</a>
+            <a id="link" href="{% url 'payment:account' %}" class="nav-item nav-link" name="Account_Button">Account</a>
+            <a id="link" href="{% url 'users:calendar' %}" class="nav-item nav-link" name="Calendar_Button">Calendar</a>
         {% endif %}
-            <a href="{% url 'users:pieChart' %}" class="nav-item nav-link">Pie Chart</a>
             {% if user.is_authenticated %}
-                <a href="{% url 'logout' %}" class="nav-item nav-link">Logout</a>
+                <a id="link" href="{% url 'logout' %}" class="nav-item nav-link" name="Logout_Button">Logout</a>
             {% endif %}
 
         {# Bell Notifications #}
 
             <div class="notifications">
-                <a href="#" class="notifications nav-item nav-link">
+                <a id="link" href="#" class="notifications nav-item nav-link">
                     <img src="/media/bell_icon.png">
                     <span class="badge">{% if message_count != 0 %}{{message_count}}{% endif %}</span>
                 </a>

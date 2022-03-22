@@ -1,31 +1,147 @@
 {% extends 'mysite/mainbase.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
 {% block body %}
+     <head>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawAssignmentChart);
+
+
+      function drawAssignmentChart() {
+          var data = new google.visualization.DataTable();
+          data.addColumn('string', 'Category');
+          data.addColumn('number', 'Min');
+          data.addColumn('number', 'Grade');
+          data.addColumn('number', 'Max');
+
+          data.addRows([
+              ['', {{ min }}, {{ submit.points_received }}, {{ max }}],
+          ]);
+
+          var view = new google.visualization.DataView(data);
+          // duplicate 1 column as a dummy data series, and add intervals to it
+          view.setColumns([0, 1, {
+              id: 'min',
+              type: 'number',
+              role: 'interval',
+              calc: function (dt, row) {
+                  return dt.getValue(row, 1);
+              }
+          }, {
+              id: 'avg',
+              type: 'number',
+              role: 'interval',
+              calc: function (dt, row) {
+                  return dt.getValue(row, 2);
+              }
+          }, {
+              id: 'max',
+              type: 'number',
+              role: 'interval',
+              calc: function (dt, row) {
+                  return dt.getValue(row, 3);
+              }
+          }, 1, 2, 3]);
+
+          var chart = new google.visualization.LineChart(document.querySelector('#assignmentchart_div'));
+          chart.draw(view, {
+              height: 350,
+              width: 350,
+              lineWidth: 4,
+              fontSize: 16,
+              title: 'Based on other students',
+              intervals: {
+                  style: 'boxes'
+              },
+              legend: {
+                  position: 'none'
+              },
+              series: {
+                  0: {
+                      // dummy data series, controls color of intervals
+                      visibleInLegend: false,
+                      color: '#a029a0',
+                      enableInteractivity: false
+                  },
+                  1: {
+                      // min series options
+                      color: 'white',
+                  },
+                  2: {
+                      // average series options
+                      color: 'blue',
+                  },
+                  3: {
+                      // max series options
+                      color: 'white'
+                  }
+              }
+          });
+      }
+    </script>
+  </head>
     <div class="container">
         <div class="row">
             <div class="col-md-10 offset-md-1">
                 <div class="card">
-                    <div class="card-header" style="background-color: lightblue">
+                    <div class="card-header" style="background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);">
                         <div class="card-title">
-                            Submit Assignment
+                            <h2 style="color: white; text-align: center">Submit Assignment</h2>
                         </div>
                     </div>
-
                     <div class="card-body">
                         <h1>{{assignment.title}}</h1>
-                        <h2>Due Date: {{ assignment.due_date }}</h2>
-                        <h2>Maximum Points: {{ assignment.max_points }}</h2>
-                        <br>
-                        <h2>Description:   {{ assignment.description }}</h2>
-                        <br><br>
-                        <form method="POST" enctype="multipart/form-data" style="text-align: center">
-                          {% csrf_token %}
-                            {{ form.as_p }}
-                                <input type="submit" value="Submit Assignment" style="background-color: lightblue; text: white">
+                        <table>
+                            <tr>
+                                <td>
+                                    <h2>Due Date: {{ assignment.due_date }}</h2>
+                                    <h2>Maximum Points: {{ assignment.max_points }}</h2>
+                                    {% if submitted %}
+                                        {% if submit.is_graded %}
+                                            <h2>Grade: {{ submit.points_received }} / {{ submit.max_points }}</h2>
+                                        {% else %}
+                                            <h2>Grade: -- / {{ assignment.max_points }}</h2>
+                                        {% endif %}
+                                    {% else %}
+                                        <h2>Grade: -- / {{ assignment.max_points }}</h2>
+                                    {% endif %}
+                                    <br>
+                                    <h2>Description:   {{ assignment.description }}</h2>
+                                </td>
+                                <td>
+                                    {% if submit.is_graded %}
+                                        <div id="assignmentchart_div" style="margin-left: 15%"></div>
+                                        <p>Avg Grade: {{ avg }}</p>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
 
-                            <a href="{% url 'course:course_page' course.id %}">
-                                <input type="button" value="Cancel" style="background-color: lightblue; text: white;" />
-                            </a>
-                        </form>
+
+                        <br><br>
+                        {% if not submitted %}
+                            <form method="POST" enctype="multipart/form-data" style="text-align: center">
+                              {% csrf_token %}
+                                {{ form.as_p }}
+                                <input class="btn btn-primary btn-block fa-lg gradient-custom-2" type="submit" value="Submit Assignment"/>
+
+                                <a href="{% url 'course:course_page' course.id %}">
+                                    <input class="btn btn-outline-danger" type="button" value="Cancel"/>
+                                </a>
+                            </form>
+                        {% else %}
+                                <h6 style="text-align: center;">Assignment has been submitted</h6>
+                        {% endif %}
                     </div>
                 </div>
             </div>

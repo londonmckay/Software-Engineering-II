@@ -4,14 +4,70 @@ from django.shortcuts import render, redirect
 from course.forms import CourseForm, AssignmentForm, SubmissionForm, SubmissionForm_file, GradingForm
 from users.models import CustomUser
 from course.models import Course, CourseUser, Assignment, Submission
-from mysite.views import Get_Messages
+from mysite.views import Get_Messages, Message_Students_In_Course, Message_Student_Submitted
+
 User = get_user_model()
 
 
 def course_page(request, id):
     course = Course.objects.get(pk=id)
     assignments = Assignment.objects.all().filter(course=id)
-    context = {'course': course, 'assignments': assignments}
+    user = CustomUser.objects.get(pk=request.user.pk)
+    submission = Submission.objects.all().filter(user=user)
+
+    # Calculating the students grade
+    all_points = 0
+    earned_points = 0
+    grade = ''
+    max = assignments
+    points_recieved = submission
+    for points in max:
+        points = points.max_points
+        all_points += points
+        print(f"all point {all_points}")
+
+    for total_points in points_recieved:
+        total_points = total_points.points_received
+        if all_points != 0:
+            earned_points += total_points
+            print(f"earned {earned_points}")
+            total = earned_points / all_points * 100
+            print(f"2nd all {all_points}")
+            print(f"total_points {total_points}")
+            print(f"total {total}")
+
+            if 94 <= total <= 100:
+                grade = 'A'
+            elif 90 <= total < 94:
+                grade = 'A-'
+            elif 87 <= total < 90:
+                grade = 'B+'
+            elif 84 <= total < 87:
+                grade = 'B'
+            elif 80 <= total < 84:
+                grade = 'B-'
+            elif 77 <= total < 80:
+                grade = 'C+'
+            elif 74 <= total < 77:
+                grade = 'C'
+            elif 70 <= total < 74:
+                grade = 'C-'
+            elif 67 <= total < 70:
+                grade = 'D+'
+            elif 64 <= total < 67:
+                grade = 'D'
+            elif 60 <= total < 64:
+                grade = 'D-'
+            else:
+                grade = 'E'
+
+    context = {
+        'course': course,
+        'assignments': assignments,
+        'submission': submission,
+        'grade': grade,
+    }
+
     messages = Get_Messages(request)
     context.update(messages)
 
@@ -43,6 +99,8 @@ def assigment_add(request, id):
         context = {
             'course': course, 'assignments': assignments
         }
+        Message_Students_In_Course(request, id, assignment.id)
+
         messages = Get_Messages(request)
         context.update(messages)  # merging the context dictionary with the messages dictionary
         return render(request, 'course/course_page.html', context)
@@ -82,6 +140,34 @@ def submit_assignment(request, course_id, assignment_id):
     user = CustomUser.objects.get(pk=request.user.pk)
     assignment = Assignment.objects.get(id=assignment_id)
     current_course = Course.objects.get(pk=course_id)
+    submitted = False
+
+    total = 0
+    grade_list = []
+    min_grade = assignment.max_points
+    max_grade = 0
+    avg = 0
+
+    submission_list = Submission.objects.all().filter(assignment=assignment_id)
+    for sub in submission_list:
+        if sub.is_graded:
+            grade_list.append(int(sub.points_received))
+            if sub.points_received < min_grade:
+                min_grade = sub.points_received
+            if sub.points_received > max_grade:
+                max_grade = sub.points_received
+            total += sub.points_received
+    print(f"grade list {grade_list}")
+
+    print(f"Min = {min_grade}, Max = {max_grade}, Avg = {avg} ")
+
+    def Average(list):
+        if len(list) != 0:
+            return sum(list) / len(list)
+
+    if len(grade_list) != 0:
+        avg = round(Average(grade_list))
+    #print(f"Min = {min_grade}, Max = {max_grade}, Avg = {avg} ")
 
     # Check if already a submission
     try:
@@ -91,7 +177,7 @@ def submit_assignment(request, course_id, assignment_id):
 
     if submit is not None:
         #messages.warning(request, "Already submitted this assignment")
-        return redirect('course:course_page', course_id)
+        submitted = True
 
     type = assignment.submission_type
     if type == '.file':
@@ -99,14 +185,43 @@ def submit_assignment(request, course_id, assignment_id):
     else:
         form = SubmissionForm(request.POST or None)
 
+    ##### Unit test make sure student is submitting an assignment #####
+    # Make sure already not submission #
+    try:
+        Submission.objects.get(user=user, assignment=assignment)
+        print(f"Submission already exists, can't submit. Passed!")
+    except Submission.DoesNotExist:
+        print(f"If you can submit, Failed.")
+
     if form.is_valid():
         submission = form.save(commit=False)
         submission.user = CustomUser.objects.get(pk=request.user.pk)
         submission.assignment = Assignment.objects.get(pk=assignment_id)
         submission.max_points = assignment.max_points
         submission.save()
+
         return redirect('course:course_page', current_course.id)
-    context = {'form': form, 'course': current_course, 'assignment': assignment}
+
+    ##### UNIT Test continued ########
+    # Make sure submission is added and for the correct assignment #
+    try:
+        submit_list = Submission.objects.all().filter(user=user, assignment=assignment)
+        ## make sure only one added ##
+        if len(submit_list) == 1:
+            print(f"Submission added, 1 of 1.  Passed!")
+    except Submission.DoesNotExist:
+        print(f"Submission Does Not Exist.")
+
+    context = {
+        'form': form,
+        'course': current_course,
+        'assignment': assignment,
+        'submitted': submitted,
+        'submit': submit,
+        'min': min_grade,
+        'max': max_grade,
+        'avg': avg
+    }
     messages = Get_Messages(request)
     context.update(messages)
     return render(request, 'course/submit_assignment.html', context)
@@ -141,6 +256,10 @@ def gradebook(request, submitid):
         submission = form.save(commit=False)
         submission.is_graded = True
         submission.save()
+
+        #Send message to students
+        Message_Student_Submitted(request, submission.id)
+
         return redirect('course:assignment_submission', assignment.id)
     return render(request, 'course/gradebook.html', context)
 
